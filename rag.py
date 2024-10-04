@@ -135,14 +135,14 @@ llm = Cortex(connection=snowflake_connection, model=MODEL_LLM)
 
 prompt = ChatPromptTemplate.from_template(
     """
-Schreibe einen Abschnitt für eine Anzeige beim Bundesamt für Soziale Sicherung.
-über die Verwendung von Sozialdaten in der Cloud. 
-Denke schrittweise, bevor Du den Abschnitt schreibst.
-<context>
-{context}
-</context>
+    Schreibe einen Abschnitt für eine Anzeige beim Bundesamt für Soziale Sicherung.
+    über die Verwendung von Sozialdaten in der Cloud. 
+    Denke schrittweise, bevor Du den Abschnitt schreibst.
+    <context>
+    {context}
+    </context>
 
-Zusätzliche Informationen: {input}"""
+    Zusätzliche Informationen: {input}"""
 )
 
 document_chain = create_stuff_documents_chain(llm, prompt)
