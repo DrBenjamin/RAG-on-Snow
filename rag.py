@@ -41,7 +41,7 @@ def load_private_key(path):
 
 @st.cache_resource
 def get_connection():
-    p_key = load_private_key("../rsa_key.p8")
+    p_key = load_private_key(st.secrets.snowflake["private_key_file"])
     p_key_bytes = p_key.private_bytes(
         encoding=serialization.Encoding.DER,
         format=serialization.PrivateFormat.PKCS8,
@@ -82,8 +82,10 @@ with st.spinner("Processing documents..."):
                 """
                 documents = []
                 patterns = self.glob_pattern.split('|')
+                
                 # Construct the full glob pattern
                 full_glob_pattern = f"{self.directory_path}{self.glob_pattern}"
+                
                 # Iterate over all files matched by the glob pattern using os.walk and fnmatch
                 for root, dirs, files in os.walk(self.directory_path):
                     st.write("Files: ", files)
@@ -91,7 +93,6 @@ with st.spinner("Processing documents..."):
                         for pattern in patterns:
                             if fnmatch.fnmatch(filename, pattern):
                                 file_path = os.path.join(root, filename)
-                                print(file_path)
                                 if file_path.endswith(".docx"):
                                     loader = Docx2txtLoader(file_path=file_path)
                                 if file_path.endswith(".csv"):
@@ -113,7 +114,7 @@ with st.spinner("Processing documents..."):
         st.session_state.embeddings = SnowflakeEmbeddings(
             connection=snowflake_connection, model=MODEL_EMBEDDINGS
         )
-        st.session_state.loader = CustomDirectoryLoader(urls=["https://www.gwq-serviceplus.de/ueber-uns", "https://docs.streamlit.io/get-started"], directory_path="..\\Documents\\", glob_pattern="*.docx|*.pdf|*.csv|*.txt")
+        st.session_state.loader = CustomDirectoryLoader(urls=["https://www.gwq-serviceplus.de/ueber-uns", "https://docs.streamlit.io/get-started"], directory_path="../Documents/", glob_pattern="*.docx|*.pdf|*.csv|*.txt")
 
         st.session_state.docs = st.session_state.loader.load()
 

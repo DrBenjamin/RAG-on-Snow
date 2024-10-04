@@ -40,7 +40,7 @@ class SnowflakeVectorStore(VectorStore):
                 return private_key
 
             def get_connection():
-                p_key = load_private_key("../rsa_key.p8")
+                p_key = load_private_key(st.secrets.snowflake["private_key_file"])
                 p_key_bytes = p_key.private_bytes(
                     encoding=serialization.Encoding.DER,
                     format=serialization.PrivateFormat.PKCS8,
