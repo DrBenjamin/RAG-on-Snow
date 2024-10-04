@@ -160,3 +160,5 @@ cython_debug/
 #.idea/
 AOK.docx
 .streamlit/secrets.toml
+.streamlit/config.toml
+.DS_Store
