@@ -1,0 +1,18 @@
+name: langchain-snowflake
+channels:
+  - https://repo.anaconda.com/pkgs/snowflake
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+    - pyarrow
+    - snowflake-connector-python
+    - snowflake-snowpark-python
+    - snowflake-ml-python
+    - langchain
+    - langchain-core
+    - langchain-community
+    - jupyterlab
+    - beautifulsoup4
+    - streamlit
+    - -r requirements.txt
