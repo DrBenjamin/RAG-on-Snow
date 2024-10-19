@@ -85,7 +85,7 @@ with st.form("document_form"):
                         patterns = self.glob_pattern.split('|')
 
                         # Iterate over all files matched by the glob pattern using os.walk and fnmatch
-                        st.write("Documents")
+                        st.markdown("**Documents**")
                         for root, dirs, files in os.walk(self.directory_path):
                             for filename in files:
                                 for pattern in patterns:
@@ -102,7 +102,7 @@ with st.form("document_form"):
                                         st.write(file_path)
                                         docs = loader.load()
                                         documents.extend(docs)
-                        st.write("Online")
+                        st.markdown("**Online**")
                         if len(self.urls) > 0:
                             for url in self.urls:
                                 st.write(url)
@@ -117,7 +117,6 @@ with st.form("document_form"):
                 )
                 folder = os.path.abspath(os.path.join(os.getcwd(), '..', st.session_state.option_offline_resources))
                 urls = st.session_state.online_resources.split(', ')
-                print(urls)
                 st.session_state.loader = CustomDirectoryLoader(urls=urls, directory_path=folder, glob_pattern="*.docx|*.pdf|*.csv|*.txt")
 
                 st.session_state.docs = st.session_state.loader.load()

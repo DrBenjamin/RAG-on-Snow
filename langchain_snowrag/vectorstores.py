@@ -2,8 +2,8 @@ from __future__ import annotations
 import streamlit as st
 import hashlib
 import json
+import re
 import logging
-import os
 import warnings
 from typing import Any, Iterable, List, Optional, Tuple, Type
 from snowflake.snowpark import Session
@@ -57,7 +57,7 @@ class SnowflakeVectorStore(VectorStore):
     def create_table_if_not_exists(self) -> None:
         self._connection.cursor().execute(
             f"""
-            CREATE TEMPORARY TABLE {self._table}
+            CREATE TEMPORARY TABLE IF NOT EXISTS {self._table}
             (
               rowid INTEGER AUTOINCREMENT,
               rowhash VARCHAR,
@@ -99,15 +99,15 @@ class SnowflakeVectorStore(VectorStore):
         # https://docs.snowflake.com/LIMITEDACCESS/vector-search#snowflake-python-connector
         for row in data_input:
             _hash = hashlib.sha256(row[0].encode("UTF-8")).hexdigest()
-            _text = row[0].replace("'", "\\'")
+            _text = re.sub(r'[^\x00-\x7F]+', '', row[0])
             _metadata = row[1]
             _vec = row[2]
             _q = f"""
                 MERGE INTO {self._table} t USING (
                     SELECT
-                        '{_hash}'::VARCHAR as rowhash,
-                        '{_text}'::VARCHAR as text,
-                        PARSE_JSON('{_metadata}') as metadata,
+                        ?::VARCHAR as rowhash,
+                        ?::VARCHAR as text,
+                        PARSE_JSON(?) as metadata,
                         {_vec}::VECTOR(float, {self._vector_length}) as text_embedding
                     ) s
                 ON s.rowhash = t.rowhash
@@ -115,10 +115,10 @@ class SnowflakeVectorStore(VectorStore):
                     INSERT (rowhash, text, metadata, text_embedding)
                     VALUES (s.rowhash, s.text, s.metadata, s.text_embedding);
             """
-            self._connection.cursor().execute(_q)
+            self._connection.cursor().execute(_q, [_hash, _text, _metadata])
         self._connection.cursor().execute("commit")
 
-        # pulling every ids we just inserted
+        # Pulling every ids we just inserted
         results = self._connection.cursor(DictCursor).execute(
             f"SELECT rowid FROM {self._table} WHERE rowid > {max_id}"
         )
