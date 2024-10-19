@@ -55,7 +55,7 @@ snowflake_connection = create_session().connection
 
 with st.form("document_form"):
     st.title("RAG LLM - Snowflake Edition")
-    system_message = st.text_input("System Message")
+    st.session_state.system_message = st.text_input("System Message", value="You are a data scientist.")
     folder = os.path.abspath(os.path.join(os.getcwd(), '..'))
     options_offline_resources = [f for f in os.listdir(folder) if os.path.isdir(os.path.join(folder, f))]
     st.session_state.option_offline_resources = st.selectbox("Offline Resources", options_offline_resources)
@@ -103,10 +103,10 @@ with st.form("document_form"):
                                         docs = loader.load()
                                         documents.extend(docs)
                         st.markdown("**Online**")
-                        if len(self.urls) > 0:
+                        if len(self.urls[0]) > 0:
                             for url in self.urls:
-                                st.write(url)
-                                loader = WebBaseLoader(url)
+                                st.write(url.strip())
+                                loader = WebBaseLoader(url.strip())
                                 docs = loader.load()
                                 documents.extend(docs)
                         return documents
@@ -116,7 +116,7 @@ with st.form("document_form"):
                     connection=snowflake_connection, model=MODEL_EMBEDDINGS
                 )
                 folder = os.path.abspath(os.path.join(os.getcwd(), '..', st.session_state.option_offline_resources))
-                urls = st.session_state.online_resources.split(', ')
+                urls = st.session_state.online_resources.split(',')
                 st.session_state.loader = CustomDirectoryLoader(urls=urls, directory_path=folder, glob_pattern="*.docx|*.pdf|*.csv|*.txt")
 
                 st.session_state.docs = st.session_state.loader.load()
@@ -144,7 +144,7 @@ with st.form("document_form"):
             {context}
             </context>
 
-            Task: {input}"""
+            Follow this task: {input}"""
         )
 
         document_chain = create_stuff_documents_chain(llm, prompt)
@@ -152,15 +152,16 @@ with st.form("document_form"):
         retriever = st.session_state.vector.as_retriever()
         retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-        prompt = st.text_input("Question:")
+        prompt = st.text_input("Question:", value="Provide a short summary (300 words) of the study design `Stroke survivors with severe mental illness: Are they at-risk for increased non-psychiatric hospitalizations?`, results and comment on how it adds to the existing body of evidence (`Association of severe mental illness with stroke outcomes and process-of-care quality indicators: nationwide cohort study`).")
 
         # If the user hits enter
         if prompt:
             # Then pass the prompt to the LLM
             st.session_state.start  = time.time()
             input_data = {
-                "input": prompt, 
-                "system": system_message}
+                "system": st.session_state.system_message,
+                "input": prompt
+            }
             response = retrieval_chain.invoke(input_data)
             st.write(f"{response['answer']} (processed in {int(time.time() - st.session_state.start)} seconds.)")
 

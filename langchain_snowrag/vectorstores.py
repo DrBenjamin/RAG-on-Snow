@@ -96,10 +96,9 @@ class SnowflakeVectorStore(VectorStore):
             for text, metadata, embed in zip(texts, metadatas, embeds)
         ]
         self._connection.cursor().execute("begin")
-        # https://docs.snowflake.com/LIMITEDACCESS/vector-search#snowflake-python-connector
         for row in data_input:
             _hash = hashlib.sha256(row[0].encode("UTF-8")).hexdigest()
-            _text = re.sub(r'[^\x00-\x7F]+', '', row[0])
+            _text = row[0].replace("'", "\\'")
             _metadata = row[1]
             _vec = row[2]
             _q = f"""
