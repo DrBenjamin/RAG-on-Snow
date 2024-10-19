@@ -82,7 +82,7 @@ with st.form("document_form"):
                         patterns = self.glob_pattern.split('|')
 
                         # Iterate over all files matched by the glob pattern using os.walk and fnmatch
-                        st.subheader("Loading documents...")
+                        st.subheader("Documents")
                         for root, dirs, files in os.walk(self.directory_path):
                             for filename in files:
                                 for pattern in patterns:
@@ -99,7 +99,7 @@ with st.form("document_form"):
                                         st.write(file_path)
                                         docs = loader.load()
                                         documents.extend(docs)
-                        st.write("Loading online resources...")
+                        st.subheader("Online")
                         for url in self.urls:
                             st.write(url)
                             loader = WebBaseLoader(url)

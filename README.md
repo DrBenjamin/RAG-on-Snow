@@ -1,4 +1,4 @@
-# langchain-snowpoc
+# langchain-snowrag
 
 > **NOTE**: This is just a PoC, not production-ready and covers just a few use cases. [Tutorial on Medium](https://medium.com/snowflake/integrating-langchain-with-snowflake-cortex-0367f934f1c1).
 
