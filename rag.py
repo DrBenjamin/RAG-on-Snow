@@ -11,16 +11,16 @@ warnings.filterwarnings(
     module='snowflake.connector'
 )
 from typing import List
-from snowflake.connector import connect
+from snowflake.snowpark import Session
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_community.document_loaders import WebBaseLoader, Docx2txtLoader, CSVLoader, PyPDFLoader, TextLoader
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_snowpoc.embedding import SnowflakeEmbeddings
-from langchain_snowpoc.llms import Cortex
-from langchain_snowpoc.vectorstores import SnowflakeVectorStore
+from langchain_snowrag.embedding import SnowflakeEmbeddings
+from langchain_snowrag.llms import Cortex
+from langchain_snowrag.vectorstores import SnowflakeVectorStore
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
@@ -40,24 +40,18 @@ def load_private_key(path):
     return private_key
 
 @st.cache_resource
-def get_connection():
-    p_key = load_private_key(st.secrets.snowflake["private_key_file"])
-    p_key_bytes = p_key.private_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
-    )
-    return connect(
-        user=st.secrets.snowflake["user"],
-        account=st.secrets.snowflake["account"],
-        private_key=p_key_bytes,
-        role=st.secrets.snowflake["role"],
-        warehouse=st.secrets.snowflake["warehouse"],
-        database=st.secrets.snowflake["database"],
-        schema=st.secrets.snowflake["schema"]
-    )
+def create_session():
+    session = Session.builder.configs(st.secrets.snowflake).create()
+    try:
+        session.use_role(st.secrets.snowflake["role"])
+        session.sql(f'USE WAREHOUSE "{st.secrets.snowflake["warehouse"]}"')
+        session.use_database(st.secrets.snowflake["database"])
+        session.use_schema(st.secrets.snowflake["schema"])
+    except Exception as e:
+        st.error(f"Error: {e}")
+    return session
 
-snowflake_connection = get_connection()
+snowflake_connection = create_session().connection
 
 st.title("RAG LLM - Snowflake Edition")
 

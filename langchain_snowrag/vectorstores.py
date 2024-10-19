@@ -6,7 +6,7 @@ import logging
 import os
 import warnings
 from typing import Any, Iterable, List, Optional, Tuple, Type
-from snowflake.connector import connect
+from snowflake.snowpark import Session
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
@@ -29,33 +29,20 @@ class SnowflakeVectorStore(VectorStore):
         vector_length: int = VECTOR_LENGTH,
     ):
 
-        if not connection:
-            def load_private_key(path):
-                with open(path, "rb") as key_file:
-                    private_key = serialization.load_pem_private_key(
-                        key_file.read(),
-                        None,
-                        backend=default_backend()
-                    )
-                return private_key
+        @st.cache_resource
+        def create_session():
+            session = Session.builder.configs(st.secrets.snowflake).create()
+            try:
+                session.use_role(st.secrets.snowflake["role"])
+                session.sql(f'USE WAREHOUSE "{st.secrets.snowflake["warehouse"]}"')
+                session.use_database(st.secrets.snowflake["database"])
+                session.use_schema(st.secrets.snowflake["schema"])
+            except Exception as e:
+                st.error(f"Error: {e}")
+            return session
 
-            def get_connection():
-                p_key = load_private_key(st.secrets.snowflake["private_key_file"])
-                p_key_bytes = p_key.private_bytes(
-                    encoding=serialization.Encoding.DER,
-                    format=serialization.PrivateFormat.PKCS8,
-                    encryption_algorithm=serialization.NoEncryption()
-                )
-                return connect(
-                    user=st.secrets.snowflake["user"],
-                    account=st.secrets.snowflake["account"],
-                    private_key=p_key_bytes,
-                    role=st.secrets.snowflake["role"],
-                    warehouse=st.secrets.snowflake["warehouse"],
-                    database=st.secrets.snowflake["database"],
-                    schema=st.secrets.snowflake["schema"]
-                )
-            connection = get_connection()
+        if not connection:
+            connection = create_session().connection
 
         if not isinstance(embedding, Embeddings):
             warnings.warn("embeddings input must be Embeddings object.")
