@@ -99,7 +99,7 @@ with st.form("document_form"):
                                             loader = PyPDFLoader(file_path=file_path)
                                         if file_path.endswith(".txt"):
                                             loader = TextLoader(file_path=file_path)
-                                        st.write(file_path)
+                                        st.markdown(f"{os.path.basename(file_path)}")
                                         docs = loader.load()
                                         documents.extend(docs)
                         st.markdown("**Online**")
