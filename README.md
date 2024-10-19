@@ -14,11 +14,7 @@ conda env create --file environment.yml
 
 To use the environment you have to activate it. Feel free to check the [documentation](https://conda.io/projects/conda/en/latest/user-guide/install/macos.html).
 
-## Jupyter Lab Example
-
-Just run `jupyter lab` in the main folder. Open `quickstart-jupyter.ipynb`
-
-## Streamlit example
+## Streamlit
 
 Just run the following code:
 
