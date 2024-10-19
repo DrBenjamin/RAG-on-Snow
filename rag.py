@@ -56,7 +56,10 @@ snowflake_connection = create_session().connection
 with st.form("document_form"):
     st.title("RAG LLM - Snowflake Edition")
     system_message = st.text_input("System Message")
-    online_resources = st.text_area("Online Resources")
+    folder = os.path.abspath(os.path.join(os.getcwd(), '..'))
+    options_offline_resources = [f for f in os.listdir(folder) if os.path.isdir(os.path.join(folder, f))]
+    st.session_state.option_offline_resources = st.selectbox("Offline Resources", options_offline_resources)
+    st.session_state.online_resources = st.text_area("Online Resources")
     rag_perform = st.form_submit_button("Submit")
     if rag_perform:
         with st.spinner("Processing documents..."):
@@ -82,7 +85,7 @@ with st.form("document_form"):
                         patterns = self.glob_pattern.split('|')
 
                         # Iterate over all files matched by the glob pattern using os.walk and fnmatch
-                        st.subheader("Documents")
+                        st.write("Documents")
                         for root, dirs, files in os.walk(self.directory_path):
                             for filename in files:
                                 for pattern in patterns:
@@ -99,25 +102,30 @@ with st.form("document_form"):
                                         st.write(file_path)
                                         docs = loader.load()
                                         documents.extend(docs)
-                        st.subheader("Online")
-                        for url in self.urls:
-                            st.write(url)
-                            loader = WebBaseLoader(url)
-                            docs = loader.load()
-                            documents.extend(docs)
+                        st.write("Online")
+                        if len(self.urls) > 0:
+                            for url in self.urls:
+                                st.write(url)
+                                loader = WebBaseLoader(url)
+                                docs = loader.load()
+                                documents.extend(docs)
                         return documents
             
                 st.session_state.start = time.time()
                 st.session_state.embeddings = SnowflakeEmbeddings(
                     connection=snowflake_connection, model=MODEL_EMBEDDINGS
                 )
-                st.session_state.loader = CustomDirectoryLoader(urls=online_resources.split(', '), directory_path="../Documents/", glob_pattern="*.docx|*.pdf|*.csv|*.txt")
+                folder = os.path.abspath(os.path.join(os.getcwd(), '..', st.session_state.option_offline_resources))
+                urls = st.session_state.online_resources.split(', ')
+                print(urls)
+                st.session_state.loader = CustomDirectoryLoader(urls=urls, directory_path=folder, glob_pattern="*.docx|*.pdf|*.csv|*.txt")
 
                 st.session_state.docs = st.session_state.loader.load()
 
                 st.session_state.text_splitter = RecursiveCharacterTextSplitter(
                     chunk_size=1000, chunk_overlap=200
                 )
+
                 st.session_state.documents = st.session_state.text_splitter.split_documents(
                     st.session_state.docs
                 )
