@@ -152,7 +152,7 @@ with st.form("document_form"):
         retriever = st.session_state.vector.as_retriever()
         retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-        prompt = st.text_input("Question:", value="Provide a short summary (300 words) of the study design `Stroke survivors with severe mental illness: Are they at-risk for increased non-psychiatric hospitalizations?`, results and comment on how it adds to the existing body of evidence (`Association of severe mental illness with stroke outcomes and process-of-care quality indicators: nationwide cohort study`).")
+        prompt = st.text_input("Question:")
 
         # If the user hits enter
         if prompt:
