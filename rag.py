@@ -55,6 +55,7 @@ snowflake_connection = create_session().connection
 
 with st.form("document_form"):
     st.title("RAG LLM - Snowflake Edition")
+    system_message = st.text_input("System Message")
     online_resources = st.text_area("Online Resources")
     rag_perform = st.form_submit_button("Submit")
     if rag_perform:
@@ -79,13 +80,10 @@ with st.form("document_form"):
                         """
                         documents = []
                         patterns = self.glob_pattern.split('|')
-                        
-                        # Construct the full glob pattern
-                        full_glob_pattern = f"{self.directory_path}{self.glob_pattern}"
-                        
+
                         # Iterate over all files matched by the glob pattern using os.walk and fnmatch
+                        st.subheader("Loading documents...")
                         for root, dirs, files in os.walk(self.directory_path):
-                            st.write("Files: ", files)
                             for filename in files:
                                 for pattern in patterns:
                                     if fnmatch.fnmatch(filename, pattern):
@@ -98,10 +96,12 @@ with st.form("document_form"):
                                             loader = PyPDFLoader(file_path=file_path)
                                         if file_path.endswith(".txt"):
                                             loader = TextLoader(file_path=file_path)
+                                        st.write(file_path)
                                         docs = loader.load()
                                         documents.extend(docs)
-                        st.write("URLs: ", self.urls)
+                        st.write("Loading online resources...")
                         for url in self.urls:
+                            st.write(url)
                             loader = WebBaseLoader(url)
                             docs = loader.load()
                             documents.extend(docs)
@@ -132,14 +132,12 @@ with st.form("document_form"):
 
         prompt = ChatPromptTemplate.from_template(
             """
-            Schreibe einen Abschnitt für eine Anzeige beim Bundesamt für Soziale Sicherung.
-            über die Verwendung von Sozialdaten in der Cloud. 
-            Denke schrittweise, bevor Du den Abschnitt schreibst.
+            {system}
             <context>
             {context}
             </context>
 
-            Zusätzliche Informationen: {input}"""
+            Task: {input}"""
         )
 
         document_chain = create_stuff_documents_chain(llm, prompt)
@@ -147,13 +145,16 @@ with st.form("document_form"):
         retriever = st.session_state.vector.as_retriever()
         retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-        prompt = st.text_input("Zusätzliche Informationen:")
+        prompt = st.text_input("Question:")
 
         # If the user hits enter
         if prompt:
             # Then pass the prompt to the LLM
             st.session_state.start  = time.time()
-            response = retrieval_chain.invoke({"input": prompt})
+            input_data = {
+                "input": prompt, 
+                "system": system_message}
+            response = retrieval_chain.invoke(input_data)
             st.write(f"{response['answer']} (processed in {int(time.time() - st.session_state.start)} seconds.)")
 
             # With a streamlit expander
