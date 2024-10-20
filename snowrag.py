@@ -27,8 +27,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 MODEL_LLM = "mistral-large"
-MODEL_EMBEDDINGS = "e5-base-v2"
-VECTOR_LENGTH = 768
+MODEL_EMBEDDINGS = "multilingual-e5-large"
+VECTOR_LENGTH = 1024
 
 def load_private_key(path):
     with open(path, "rb") as key_file:
@@ -55,7 +55,6 @@ snowflake_connection = create_session().connection
 
 with st.form("document_form"):
     st.title("RAG LLM - Snowflake Edition")
-    st.session_state.system_message = st.text_input("System Message", value="You are a data scientist.")
     folder = os.path.abspath(os.path.join(os.getcwd(), '..'))
     options_offline_resources = [f for f in os.listdir(folder) if os.path.isdir(os.path.join(folder, f))]
     st.session_state.option_offline_resources = st.selectbox("Offline Resources", options_offline_resources)
@@ -151,7 +150,7 @@ with st.form("document_form"):
 
         retriever = st.session_state.vector.as_retriever()
         retrieval_chain = create_retrieval_chain(retriever, document_chain)
-
+        system = st.text_input("System Message", value="You are a data scientist. Think step by step.")
         prompt = st.text_input("Question:")
 
         # If the user hits enter
@@ -159,7 +158,7 @@ with st.form("document_form"):
             # Then pass the prompt to the LLM
             st.session_state.start  = time.time()
             input_data = {
-                "system": st.session_state.system_message,
+                "system": system,
                 "input": prompt
             }
             response = retrieval_chain.invoke(input_data)

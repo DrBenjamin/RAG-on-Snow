@@ -32,7 +32,8 @@ class SnowflakeEmbeddings(BaseModel, Embeddings):
     connection: SnowflakeConnection = None
     """Connection to Snowflake to use"""
 
-    model: str = "e5-base-v2"
+    #model: str = "e5-base-v2"
+    model: str = "multilingual-e5-large"
     """Model name to use."""
 
     show_progress: bool = False
@@ -64,8 +65,8 @@ class SnowflakeEmbeddings(BaseModel, Embeddings):
             The response as a dictionary.
         """
         to_embed = input.replace("'", "\\'")
-        q = f"SELECT SNOWFLAKE.CORTEX.EMBED_TEXT_768('{self.model}', '{to_embed}') as EMBEDDING"
-
+        q = f"SELECT SNOWFLAKE.CORTEX.EMBED_TEXT_1024('{self.model}', '{to_embed}') as EMBEDDING"
+        #q = f"SELECT SNOWFLAKE.CORTEX.EMBED_TEXT_1024('multilingual-e5-large', 'hola mundo') as EMBEDDING"
         return self.connection.cursor(DictCursor).execute(q).fetchone()["EMBEDDING"]
 
     def _embed(self, input: List[str]) -> List[List[float]]:

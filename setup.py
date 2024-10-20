@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="langchain-snowpoc",
+    name="langchain-snowrag",
     version="0.0.1",
     packages=find_packages(),
     description="This is a PoC for Snowflake integration with Langchain",
