@@ -54,7 +54,7 @@ class SnowflakeVectorStore(VectorStore):
     def create_table_if_not_exists(self) -> None:
         self._connection.cursor().execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self._table}
+            CREATE TEMPORARY TABLE IF NOT EXISTS {self._table}
             (
               rowid INTEGER AUTOINCREMENT,
               rowhash VARCHAR,
