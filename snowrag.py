@@ -10,6 +10,9 @@ warnings.filterwarnings(
     category=UserWarning,
     module='snowflake.connector'
 )
+import fitz  # PyMuPDF
+import io
+from PIL import Image
 from typing import List
 from snowflake.snowpark import Session
 from langchain.chains import create_retrieval_chain
@@ -95,6 +98,29 @@ with st.form("document_form"):
                                         if file_path.endswith(".csv"):
                                             loader = CSVLoader(file_path=file_path)
                                         if file_path.endswith(".pdf"):
+                                            pdf_file = fitz.open(file_path)
+                                            for page_index in range(len(pdf_file)): # Iterating over PDF pages
+                                                # Getting the page itself
+                                                page = pdf_file.load_page(page_index)  # Loading the page
+                                                image_list = page.get_images(full = True)  # Getting images on the page
+                                                for image_index, img in enumerate(image_list, start = 1):
+                                                    # Getting the XREF of the image
+                                                    xref = img[0]
+
+                                                    # Extracting the image bytes
+                                                    base_image = pdf_file.extract_image(xref)
+                                                    image_bytes = base_image["image"]
+
+                                                    # Getting the image extension
+                                                    image_ext = base_image["ext"]
+
+                                                    # Saving the image
+                                                    path = os.path.join(self.directory_path, "images")
+                                                    os.makedirs(path, exist_ok=True)
+                                                    image_name = f"image{page_index+1}_{image_index}.{image_ext}"
+                                                    image_path = os.path.join(path, image_name)
+                                                    with open(image_path, "wb") as image_file:
+                                                        image_file.write(image_bytes)
                                             loader = PyPDFLoader(file_path=file_path)
                                         if file_path.endswith(".txt"):
                                             loader = TextLoader(file_path=file_path)
