@@ -176,8 +176,8 @@ with st.form("document_form"):
 
         retriever = st.session_state.vector.as_retriever()
         retrieval_chain = create_retrieval_chain(retriever, document_chain)
-        system = st.text_input("System Message", value="You are a data scientist. Think step by step.")
-        prompt = st.text_input("Question:")
+        system = st.text_input("System Message", value="Du antwortest Anwendern des KIS (Krankenhausinformationssystems) NAVIS in fachlicher Sprache.")
+        prompt = st.text_input("Frage:")
 
         # If the user hits enter
         if prompt:
