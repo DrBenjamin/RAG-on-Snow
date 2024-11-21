@@ -147,7 +147,7 @@ with st.form("document_form"):
                 st.session_state.docs = st.session_state.loader.load()
 
                 st.session_state.text_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=1000, chunk_overlap=200
+                    chunk_size=5000, chunk_overlap=500
                 )
 
                 st.session_state.documents = st.session_state.text_splitter.split_documents(
