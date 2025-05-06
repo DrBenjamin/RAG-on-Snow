@@ -1,0 +1,13 @@
+cryptography
+snowflake  
+snowflake-connector-python
+snowflake-snowpark-python
+snowflake[ml]
+minio
+langchain
+langchain_community
+langchain_core
+black
+build
+PyMuPDF
+tox

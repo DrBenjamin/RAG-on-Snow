@@ -1,0 +1,5 @@
+// Create table `LANGCHAIN_TEST`
+CREATE TABLE IF NOT EXISTS LANGCHAIN_TEST (
+    id STRING,
+    name STRING
+);
