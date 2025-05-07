@@ -179,7 +179,7 @@ with st.sidebar:
         new_disp = st.text_input(
             "Tabellenname", value="TEST", on_change=_reset_vector_store)
         st.session_state.option_embedding_model = st.selectbox(
-            "Wähle das Embedding-Modell", options=st.secrets["snowflake"]["models"],
+            "Wähle das Embedding-Modell", options=st.secrets["snowflake"]["embedding_models"],
             index=0, key="embedding_model"
         )
         st.session_state.option_vector_length = st.selectbox(
@@ -214,7 +214,7 @@ with st.sidebar:
     if selected_disp != "Erstelle neue Tabelle":
         st.session_state.image_extraction = st.toggle("Bilder extrahieren", value=st.session_state.image_extraction)
         st.session_state.option_model = st.selectbox(
-            "Wähle ein Sprachmodell", options=st.secrets["snowflake"]["llm_models"],
+            "Wähle ein Sprachmodell", options=st.secrets["snowflake"]["models"],
             index=0, key="model"
         )
 
