@@ -26,6 +26,9 @@ conda activate snowrag
 Now configure the Streamlit app in the `.streamlit/secrets.toml` file:
 
 ```toml
+# App configuration
+SNOWFLAKE = "true" 
+
 # Configuring LLM
 [LLM]
 LLM_CHATBOT_NAME = "<chatbot_name>"
@@ -44,6 +47,15 @@ role = "<role_name>"
 warehouse = "<warehouse_name>"
 database = "<database_name>"
 schema = "<schema_name>"
+
+# Configuring PostgreSQL
+[psotgresql]
+user = "<user_name>"
+password = "<password>"
+host = "<host_name>"
+port = "<port_number>"
+database = "<database_name>"
+table = "<table_name>"
 
 # Configuring MinIO storage
 [MinIO]

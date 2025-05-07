@@ -1,13 +1,13 @@
-### `snowrag.py`
+### `navigator.py`
 ### Main application for the RAG on Snow project
 ### Open-Source, hosted on https://github.com/DrBenjamin/RAG-on-Snow
 ### Please reach out to ben@seriousbenentertainment.org for any questions
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-from langchain.vectorstores import SnowflakeVectorStore
-from langchain.minio import upload_file_to_minio
-from langchain.llms import Cortex
-from langchain.embedding import SnowflakeEmbeddings
+from src.snowrag.vectorstores import SnowflakeVectorStore
+from src.snowrag.llms import Cortex
+from src.snowrag.embedding import SnowflakeEmbeddings
+from src.minio import upload_file_to_minio
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -17,7 +17,6 @@ from langchain_core.documents import Document
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_community.document_loaders import WebBaseLoader, Docx2txtLoader, CSVLoader, PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from snowflake.snowpark import Session
 from typing import List
 import hashlib
 import fitz  # PyMuPDF
@@ -39,12 +38,13 @@ warnings.filterwarnings(
 logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
-# Adding import for new Snowflake helpers
-from langchain.snowflake import (
+# Updating import for Snowflake helpers to use the package path
+from src.snowrag.snowrag import (
     set_snowflake_user_agent,
     create_session,
     fetch_tables_with_retry,
-    drop_table_with_retry
+    drop_table_with_retry,
+    _reset_vector_store
 )
 
 # Setting the page config
@@ -57,9 +57,7 @@ st.set_page_config(
 
 # Detecting iframe embedding using JS and/or 'embed' query parameter (legacy API)
 try:
-    query_param = st.query_params.get_all("angular")
-    is_embed_param = query_param[0].lower() == "true"
-    st.session_state["IS_EMBED"] = bool(is_embed_param)
+    st.session_state["IS_EMBED"] = bool(st.query_params.get_all("angular")[0].lower() == "true")
 except Exception as e:
     st.session_state["IS_EMBED"] = False
 
@@ -79,57 +77,24 @@ if "embedding_model" not in st.session_state:
 if "vector_length" not in st.session_state:
     st.session_state.option_vector_length = 1024
 
-# Function to load the private key
-def load_private_key(path):
-    with open(path, "rb") as key_file:
-        private_key = serialization.load_pem_private_key(
-            key_file.read(),
-            None,
-            backend=default_backend()
-        )
-    return private_key
-
-
-# Function to create the Snowflake session
-@st.cache_resource
-def create_session():
-    session = Session.builder.configs(st.secrets.snowflake).create()
-    try:
-        session.use_role(st.secrets.snowflake["role"])
-        session.sql(f'USE WAREHOUSE "{st.secrets.snowflake["warehouse"]}"')
-        session.use_database(st.secrets.snowflake["database"])
-        session.use_schema(st.secrets.snowflake["schema"])
-    except Exception as e:
-        st.error(f"Error: {e}")
-    return session
-
-
-# Function to reset the vector store
-def _reset_vector_store():
-    # Removing any old vector/store/docs so we re‑init against the new table
-    for key in ("vector", "docs", "embeddings", "loader"):
-        if key in st.session_state:
-            del st.session_state[key]
-
 
 # Function to list all files one level up and open them
 def show_open_file_button(filename, source, idx):
-    # Using the MinIO URL as the download source
-    minio_url = source
+    # Using the MinIO or Snwoflake stage URL as the download source
+    url = source
     key = f"minio-download-{filename}-{idx}"
-    if minio_url:
-        if st.session_state["IS_EMBED"] and minio_url.startswith(("http://", "https://")):
+    if url:
+        if st.session_state["IS_EMBED"]:
             # Creating a direct download link for iOS/iframe users
             st.markdown(
-                f'<a href="{minio_url}" download="{filename}" target="_blank" rel="noopener" style="font-weight:bold;">'
+                f'<a href="{url}" download="{filename}" target="_blank" rel="noopener" style="font-weight:bold;">'
                 f'📥 Datei {filename} herunterladen</a>',
                 unsafe_allow_html=True
             )
-            st.info("Falls der Download nicht automatisch startet, bitte den Link lange drücken und 'Download' wählen.")
         else:
             try:
                 # Downloading the file into an in-memory buffer (desktop/normal browser)
-                response = requests.get(minio_url, verify=False)
+                response = requests.get(url, verify=False)
                 response.raise_for_status()
                 buffer = io.BytesIO(response.content)
                 st.download_button(
@@ -140,11 +105,12 @@ def show_open_file_button(filename, source, idx):
                     key=key
                 )
             except Exception as e:
-                st.error(f"Fehler beim Herunterladen von MinIO: {e}")
+                st.write(f"Datei: {filename}")
         return True
     return False
 
-## Function to ensure the output key chain
+
+# Function to ensure the output key chain
 def ensure_output_key_chain(result):
     """
     Ensures the chain output has an 'output' key for LangChain callbacks.
@@ -164,7 +130,8 @@ def ensure_output_key_chain(result):
 
 
 # Creating the Snowflake session
-snowflake_connection = create_session().connection
+if st.secrets["SNOWFLAKE"].lower() == "true":
+    snowflake_connection = create_session().connection
 
 # Adding sidebar for options
 with st.sidebar:
@@ -580,7 +547,7 @@ if 'vector' in st.session_state:
                         if not file_found:
                             st.write(f"**Dateiname**: {filename}")
                     else:
-                        # Fallback: just show the filename if not a valid URL
+                        # Showing the filename if not a valid URL
                         if source:
                             filename = os.path.basename(source)
                         else:
@@ -601,20 +568,9 @@ if 'vector' in st.session_state:
                 }
             messages_json = [serialize_message(m) for m in msgs.messages]
 
-            # Adding a download button for the message history
-            if st.session_state["IS_EMBED"]:
-                # Showing the copy-to-clipboard in Angular app/iframe
-                st.code(json.dumps(messages_json, ensure_ascii=False, indent=2), language="json")
-            else:
-                # Showing the download button in normal browser
-                st.json(messages_json)
-                st.markdown("**Chatverlauf als JSON downloaden:**")
-                st.download_button(
-                    label="Download Chatverlauf (JSON)",
-                    data=json.dumps(messages_json, ensure_ascii=False, indent=2),
-                    file_name="chat_history.json",
-                    mime="application/json"
-                )
+            # Showing the copy-to-clipboard code window
+            st.code(json.dumps(messages_json, ensure_ascii=False, indent=2), language="json")
+
 else:
     if selected_disp == "Erstelle neue Tabelle":
         st.info("Bitte integriere zuerst Dokumente, um eine Vektorbank zu erstellen.")
