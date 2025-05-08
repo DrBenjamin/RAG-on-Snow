@@ -1,3 +1,7 @@
+### `src/postgrag/vectorstores.py`
+### LLM class for Snowflake
+### Open-Source, hosted on https://github.com/DrBenjamin/RAG-on-Snow
+### Please reach out to ben@seriousbenentertainment.org for any questions
 """
 VectorStore implementation for PostgreSQL using raglite.
 """

@@ -1,3 +1,7 @@
+### `src/snowrag/snowrag.py`
+### Embedding class for Snowflake
+### Open-Source, hosted on https://github.com/DrBenjamin/RAG-on-Snow
+### Please reach out to ben@seriousbenentertainment.org for any questions
 import os
 import streamlit as st
 import logging

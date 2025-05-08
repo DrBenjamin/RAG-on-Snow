@@ -1,4 +1,4 @@
-### `langchain_snowrag/embedding.py`
+### `src/snowrag/embedding.py`
 ### Embedding class for Snowflake
 ### Open-Source, hosted on https://github.com/DrBenjamin/RAG-on-Snow
 ### Please reach out to ben@seriousbenentertainment.org for any questions
