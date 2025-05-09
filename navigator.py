@@ -2,8 +2,6 @@
 ### Main application for the RAG on Snow project
 ### Open-Source, hosted on https://github.com/DrBenjamin/RAG-on-Snow
 ### Please reach out to ben@seriousbenentertainment.org for any questions
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
 from src.snowrag.vectorstores import SnowflakeVectorStore
 from src.snowrag.llms import Cortex
 from src.snowrag.embedding import SnowflakeEmbeddings
