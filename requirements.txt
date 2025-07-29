@@ -11,3 +11,4 @@ black
 build
 PyMuPDF
 tox
+python-magic

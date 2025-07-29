@@ -17,7 +17,6 @@ dependencies:
       - unstructured-client
       - "unstructured[pdf]"
       - python-magic
-      - python-magic-bin
       - docx2txt
       - beautifulsoup4
       - streamlit
