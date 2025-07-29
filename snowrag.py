@@ -26,6 +26,7 @@ import hashlib
 import fitz  # PyMuPDF
 import streamlit as st
 import logging
+logger = logging.getLogger(__name__)
 import sys
 import time
 import os
@@ -88,14 +89,22 @@ def load_private_key(path):
 # Function to create the Snowflake session
 @st.cache_resource
 def create_session():
-    session = Session.builder.configs(st.secrets.snowflake).create()
+    # Logging
+    logger.warning(f"Versuche Verbindung zu Snowflake mit Account: {st.secrets.snowflake.get('account', 'UNBEKANNT')}")
     try:
+        session = Session.builder.configs(st.secrets.snowflake).create()
         session.use_role(st.secrets.snowflake["role"])
         session.sql(f'USE WAREHOUSE "{st.secrets.snowflake["warehouse"]}"')
         session.use_database(st.secrets.snowflake["database"])
         session.use_schema(st.secrets.snowflake["schema"])
     except Exception as e:
-        st.error(f"Error: {e}")
+        logger.error(f"Fehler beim Verbindungsaufbau zu Snowflake: {e}")
+        st.error(
+            f"Fehler beim Verbindungsaufbau zu Snowflake: {e}\n"
+            "Bitte prüfe die Account-URL und Zugangsdaten in st.secrets.snowflake.\n"
+            "Account-URL sollte z.B. so aussehen: 'xy12345.eu-central-1' (ohne https:// und ohne .snowflakecomputing.com)"
+        )
+        raise
     return session
 
 

@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 def get_minio_client():
     """Creating and returning a MinIO client using Streamlit secrets."""
     return Minio(
-        endpoint=st.secrets["MinIO"]["endpoint"].replace("http://", ""),
+        endpoint=st.secrets["MinIO"]["endpoint"].replace("http://", "").replace("https://", ""),
         access_key=st.secrets["MinIO"]["access_key"],
         secret_key=st.secrets["MinIO"]["secret_key"],
-        secure=False
+        secure=True
     )
 
 # Uploading a file to MinIO and returning the public URL

@@ -167,3 +167,4 @@ AOK.docx
 .snowflake/rsa_key.pub
 .snowflake/connections.toml
 .snowflake/config.toml
+PDFs/*
